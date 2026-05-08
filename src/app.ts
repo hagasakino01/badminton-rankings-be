@@ -10,10 +10,16 @@ export function createApp() {
   const allowedOrigins = env.CLIENT_ORIGIN.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+  const allowAllOrigins = allowedOrigins.includes("*");
 
   app.use(
     cors({
       origin(origin, callback) {
+        if (allowAllOrigins) {
+          callback(null, true);
+          return;
+        }
+
         // Allow server-to-server calls and configured browser origins.
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
@@ -22,7 +28,7 @@ export function createApp() {
 
         callback(new Error(`Origin ${origin} is not allowed by CORS`));
       },
-      credentials: true,
+      credentials: !allowAllOrigins,
     }),
   );
   app.use(express.json());
