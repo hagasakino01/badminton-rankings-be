@@ -7,10 +7,21 @@ import { apiRouter } from "./routes";
 
 export function createApp() {
   const app = express();
+  const allowedOrigins = env.CLIENT_ORIGIN.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN,
+      origin(origin, callback) {
+        // Allow server-to-server calls and configured browser origins.
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`Origin ${origin} is not allowed by CORS`));
+      },
       credentials: true,
     }),
   );
