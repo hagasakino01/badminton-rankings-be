@@ -42,8 +42,8 @@ export const createSeason = asyncHandler(async (req, res) => {
     status: "active",
   });
 
-  if (activePlayers < 8 || activePlayers > 20) {
-    throw new AppError(400, "A group needs between 8 and 20 active players before creating a season");
+  if (activePlayers < 5 || activePlayers > 20) {
+    throw new AppError(400, "A group needs between 5 and 20 active players before creating a season");
   }
 
   const openSeason = await SeasonModel.findOne({
