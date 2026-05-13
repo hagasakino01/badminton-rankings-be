@@ -5,15 +5,49 @@ import { PlayerModel } from "../models/Player";
 import { SeasonModel } from "../models/Season";
 import { SessionModel } from "../models/Session";
 import { calculateSeasonRankings } from "../services/ranking.service";
-import { generateFairSchedule } from "../services/schedule.service";
+import {
+  generateFairSchedule,
+  validateManualSchedule,
+} from "../services/schedule.service";
 import { asyncHandler } from "../utils/asyncHandler";
 import { AppError } from "../utils/appError";
 import { assertGroupManager } from "../utils/permissions";
 
-const generateSessionSchema = z.object({
-  scheduledFor: z.coerce.date(),
-  participantIds: z.array(z.string()).min(5, "A session requires at least 5 participants"),
+const manualMatchSchema = z.object({
+  teamAIds: z.array(z.string()).length(2),
+  teamBIds: z.array(z.string()).length(2),
 });
+
+const generateSessionSchema = z
+  .object({
+    title: z.string().trim().max(120).optional(),
+    note: z.string().trim().max(500).optional(),
+    scheduledFor: z.coerce.date(),
+    participantIds: z.array(z.string()).min(5, "A session requires at least 5 participants"),
+    scheduleType: z.enum(["auto", "manual"]).default("auto"),
+    manualMatches: z.array(manualMatchSchema).optional(),
+  })
+  .superRefine((payload, ctx) => {
+    if (payload.scheduleType !== "manual") {
+      return;
+    }
+
+    if (payload.participantIds.length > 12) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["participantIds"],
+        message: "Manual schedules support at most 12 participants",
+      });
+    }
+
+    if (!payload.manualMatches?.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["manualMatches"],
+        message: "Manual schedules require at least one match",
+      });
+    }
+  });
 
 const updateResultsSchema = z.object({
   results: z.array(
@@ -42,6 +76,11 @@ function areSessionResultsSaved(
         typeof match.scoreB === "number",
     )
   );
+}
+
+function normalizeOptionalText(value?: string) {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
 }
 
 export const generateSession = asyncHandler(async (req, res) => {
@@ -74,14 +113,30 @@ export const generateSession = asyncHandler(async (req, res) => {
     .map((player) => player._id.toString())
     .filter((playerId) => !uniqueParticipantIds.includes(playerId));
   const normalizedSeasonId = season._id.toString();
+  const schedule =
+    payload.scheduleType === "manual"
+      ? {
+          matches: payload.manualMatches ?? [],
+          playerLoad: Object.fromEntries(uniqueParticipantIds.map((participantId) => [participantId, 4])),
+        }
+      : generateFairSchedule(uniqueParticipantIds);
 
-  const schedule = generateFairSchedule(uniqueParticipantIds);
+  if (payload.scheduleType === "manual") {
+    const manualScheduleError = validateManualSchedule(uniqueParticipantIds, schedule.matches);
+    if (manualScheduleError) {
+      throw new AppError(400, manualScheduleError);
+    }
+  }
+
   const session = await SessionModel.create({
     groupId: season.groupId,
     seasonId: normalizedSeasonId,
+    title: normalizeOptionalText(payload.title),
+    note: normalizeOptionalText(payload.note),
     scheduledFor: payload.scheduledFor,
     participantIds: uniqueParticipantIds,
     absentPlayerIds,
+    scheduleType: payload.scheduleType,
     createdBy: req.user?.userId,
   });
 
@@ -126,6 +181,7 @@ export const getSession = asyncHandler(async (req, res) => {
   res.json({
     session: {
       ...session,
+      scheduleType: session.scheduleType ?? "auto",
       isResultsSaved: areSessionResultsSaved(session, matches),
     },
     matches,

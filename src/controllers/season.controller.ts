@@ -91,6 +91,7 @@ export const getSeason = asyncHandler(async (req, res) => {
     season,
     sessions: sessions.map((session) => ({
       ...session,
+      scheduleType: session.scheduleType ?? "auto",
       isResultsSaved: areSessionResultsSaved(session, matchesBySessionId[session._id.toString()] ?? []),
       matches: matchesBySessionId[session._id.toString()] ?? [],
     })),

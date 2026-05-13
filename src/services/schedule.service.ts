@@ -1,4 +1,4 @@
-type MatchPlan = {
+export type MatchPlan = {
   teamAIds: string[];
   teamBIds: string[];
 };
@@ -127,4 +127,59 @@ export function generateFairSchedule(participantIds: string[]) {
     matches,
     playerLoad: Object.fromEntries(appearances),
   };
+}
+
+export function validateManualSchedule(participantIds: string[], matches: MatchPlan[]) {
+  if (participantIds.length < 5) {
+    return "A manual schedule requires at least 5 participants";
+  }
+
+  if (participantIds.length > 12) {
+    return "A manual schedule supports at most 12 participants";
+  }
+
+  if (matches.length !== participantIds.length) {
+    return `A manual schedule with ${participantIds.length} participants must include exactly ${participantIds.length} matches`;
+  }
+
+  const participantSet = new Set(participantIds);
+  const matchCounts = new Map(participantIds.map((participantId) => [participantId, 0]));
+
+  for (const [index, match] of matches.entries()) {
+    if (match.teamAIds.length !== 2 || match.teamBIds.length !== 2) {
+      return `Match ${index + 1} must contain exactly 2 players per team`;
+    }
+
+    const players = [...match.teamAIds, ...match.teamBIds];
+
+    if (players.some((playerId) => !playerId)) {
+      return `Match ${index + 1} must contain exactly 4 players`;
+    }
+
+    if (new Set(players).size !== players.length) {
+      return `A player cannot appear twice in match ${index + 1}`;
+    }
+
+    if (players.some((playerId) => !participantSet.has(playerId))) {
+      return `Match ${index + 1} includes a player outside the selected participants`;
+    }
+
+    for (const playerId of players) {
+      matchCounts.set(playerId, (matchCounts.get(playerId) ?? 0) + 1);
+    }
+  }
+
+  for (const participantId of participantIds) {
+    const matchCount = matchCounts.get(participantId) ?? 0;
+
+    if (matchCount < 4) {
+      return "Every participant must appear in exactly 4 matches";
+    }
+
+    if (matchCount > 4) {
+      return "Participants cannot be scheduled for more than 4 matches";
+    }
+  }
+
+  return null;
 }
