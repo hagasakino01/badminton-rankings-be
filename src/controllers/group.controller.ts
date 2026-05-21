@@ -43,7 +43,7 @@ async function resolveNewPlayerStatus(groupId: string) {
     return {
       status: "inactive" as const,
       message:
-        "Thành viên mới đã được thêm với trạng thái inactive vì bảng đấu đang có mùa giải hoạt động.",
+        "Thành viên mới đã được thêm với trạng thái không hoạt động vì bảng đấu đang có mùa giải hoạt động.",
     };
   }
 
@@ -51,13 +51,13 @@ async function resolveNewPlayerStatus(groupId: string) {
     return {
       status: "inactive" as const,
       message:
-        "Bảng đấu đã đạt tối đa 20 thành viên active. Thành viên mới được thêm với trạng thái inactive.",
+        "Bảng đấu đã đạt tối đa 20 thành viên hoạt động. Thành viên mới được thêm với trạng thái không hoạt động.",
     };
   }
 
   return {
     status: "active" as const,
-    message: "Thành viên mới đã được thêm với trạng thái active.",
+    message: "Thành viên mới đã được thêm với trạng thái hoạt động.",
   };
 }
 
@@ -167,7 +167,7 @@ export const updatePlayerStatus = asyncHandler(async (req, res) => {
     });
 
     if (activePlayerCount >= 20) {
-      throw new AppError(400, "Bảng đấu đã đạt tối đa 20 thành viên active.");
+      throw new AppError(400, "Bảng đấu đã đạt tối đa 20 thành viên hoạt động.");
     }
   }
 
@@ -178,8 +178,8 @@ export const updatePlayerStatus = asyncHandler(async (req, res) => {
     player,
     message:
       payload.status === "active"
-        ? "Thành viên đã được chuyển sang active."
-        : "Thành viên đã được chuyển sang inactive.",
+        ? "Thành viên đã được chuyển sang hoạt động."
+        : "Thành viên đã được chuyển sang không hoạt động.",
   });
 });
 
