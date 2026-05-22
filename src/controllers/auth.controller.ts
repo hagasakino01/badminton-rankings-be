@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { UserModel } from "../models/User";
+import { clearAuthCookie, setAuthCookie } from "../utils/authCookie";
 import { asyncHandler } from "../utils/asyncHandler";
 import { AppError } from "../utils/appError";
 import { signToken } from "../utils/jwt";
@@ -55,8 +56,8 @@ export const register = asyncHandler(async (req, res) => {
     email: user.email,
   });
 
+  setAuthCookie(req, res, token);
   res.status(201).json({
-    token,
     user: {
       id: user._id,
       name: user.name,
@@ -86,8 +87,8 @@ export const login = asyncHandler(async (req, res) => {
     email: user.email,
   });
 
+  setAuthCookie(req, res, token);
   res.json({
-    token,
     user: {
       id: user._id,
       name: user.name,
@@ -136,8 +137,8 @@ export const updateProfile = asyncHandler(async (req, res) => {
     email: user.email,
   });
 
+  setAuthCookie(req, res, token);
   res.json({
-    token,
     user: {
       id: user._id,
       name: user.name,
@@ -170,4 +171,9 @@ export const changePassword = asyncHandler(async (req, res) => {
   res.json({
     message: "Password updated successfully",
   });
+});
+
+export const logout = asyncHandler(async (req, res) => {
+  clearAuthCookie(req, res);
+  res.status(204).send();
 });

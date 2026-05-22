@@ -1,16 +1,19 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { readAuthCookie } from "../utils/authCookie";
 import { AppError } from "../utils/appError";
 import { verifyToken } from "../utils/jwt";
 
 export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.replace("Bearer ", "").trim()
+    : undefined;
+  const token = readAuthCookie(req) ?? bearerToken;
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
     return next(new AppError(401, "Authentication required"));
   }
-
-  const token = authHeader.replace("Bearer ", "").trim();
 
   try {
     req.user = verifyToken(token);

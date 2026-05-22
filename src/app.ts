@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 
@@ -28,9 +29,10 @@ export function createApp() {
 
         callback(new Error(`Origin ${origin} is not allowed by CORS`));
       },
-      credentials: !allowAllOrigins,
+      credentials: true,
     }),
   );
+  app.use(cookieParser());
   app.use(express.json());
 
   app.use("/api", apiRouter);
