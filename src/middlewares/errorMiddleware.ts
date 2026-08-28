@@ -15,12 +15,17 @@ export function errorHandler(
   _next: NextFunction,
 ) {
   if (error instanceof AppError) {
-    return res.status(error.statusCode).json({ message: error.message });
+    return res.status(error.statusCode).json({
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
   }
 
   if (error instanceof ZodError) {
     return res.status(400).json({
       message: "Validation failed",
+      code: "VALIDATION_ERROR",
       issues: error.issues.map((issue) => ({
         path: issue.path.join("."),
         message: issue.message,
@@ -29,13 +34,13 @@ export function errorHandler(
   }
 
   if (error instanceof mongoose.Error.ValidationError) {
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({ message: error.message, code: "DATABASE_VALIDATION_ERROR" });
   }
 
   if (error instanceof mongoose.Error.CastError) {
-    return res.status(400).json({ message: "Invalid identifier" });
+    return res.status(400).json({ message: "Invalid identifier", code: "INVALID_IDENTIFIER" });
   }
 
   console.error(error);
-  return res.status(500).json({ message: "Internal server error" });
+  return res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
 }

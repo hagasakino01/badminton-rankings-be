@@ -1,27 +1,22 @@
 import { Schema, model } from "mongoose";
 
-export type UserRole = "admin" | "player";
-
-export interface UserDocument {
-  _id: string;
-  name: string;
-  email: string;
-  passwordHash: string;
-  role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const userSchema = new Schema<UserDocument>(
+const userSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, trim: true, lowercase: true, unique: true },
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      index: true,
+    },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ["admin", "player"], default: "admin" },
+    status: { type: String, enum: ["active", "disabled"], default: "active", index: true },
+    timezone: { type: String, default: "Asia/Ho_Chi_Minh", trim: true },
+    lastLoginAt: { type: Date },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
-export const UserModel = model<UserDocument>("User", userSchema);
+export const UserModel = model("User", userSchema);

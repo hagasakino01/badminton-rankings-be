@@ -12,21 +12,13 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const token = readAuthCookie(req) ?? bearerToken;
 
   if (!token) {
-    return next(new AppError(401, "Authentication required"));
+    return next(new AppError(401, "Authentication required", "AUTH_REQUIRED"));
   }
 
   try {
     req.user = verifyToken(token);
     next();
   } catch {
-    next(new AppError(401, "Invalid or expired token"));
+    next(new AppError(401, "Invalid or expired token", "AUTH_TOKEN_INVALID"));
   }
-}
-
-export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
-  if (req.user?.role !== "admin") {
-    return next(new AppError(403, "Admin role required"));
-  }
-
-  next();
 }

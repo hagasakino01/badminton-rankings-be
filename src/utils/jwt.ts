@@ -4,7 +4,6 @@ import { env } from "../config/env";
 
 export type JwtPayload = {
   userId: string;
-  role: "admin" | "player";
   email: string;
 };
 

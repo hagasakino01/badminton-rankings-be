@@ -1,40 +1,28 @@
 import { Schema, model } from "mongoose";
 
-export type MatchStatus = "scheduled" | "completed";
-export type WinnerTeam = "A" | "B";
+import { COMPETITION_MODES, MATCH_STATUSES } from "../domain/constants";
 
-export interface MatchDocument {
-  _id: string;
-  groupId: string;
-  seasonId: string;
-  sessionId: string;
-  courtOrder: number;
-  teamAIds: string[];
-  teamBIds: string[];
-  scoreA?: number;
-  scoreB?: number;
-  winnerTeam?: WinnerTeam;
-  status: MatchStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const matchSchema = new Schema<MatchDocument>(
+const matchSchema = new Schema(
   {
-    groupId: { type: String, required: true, index: true },
-    seasonId: { type: String, required: true, index: true },
-    sessionId: { type: String, required: true, index: true },
-    courtOrder: { type: Number, required: true, min: 1 },
-    teamAIds: [{ type: String, required: true }],
-    teamBIds: [{ type: String, required: true }],
-    scoreA: { type: Number, min: 0 },
-    scoreB: { type: Number, min: 0 },
+    groupId: { type: Schema.Types.ObjectId, ref: "Group", required: true, index: true },
+    seasonId: { type: Schema.Types.ObjectId, ref: "Season", required: true, index: true },
+    sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: true, index: true },
+    mode: { type: String, enum: COMPETITION_MODES, required: true },
+    roundNumber: { type: Number, required: true, min: 1 },
+    courtNumber: { type: Number, required: true, min: 1, max: 1, default: 1 },
+    teamAProfileIds: [{ type: Schema.Types.ObjectId, ref: "PlayerProfile", required: true }],
+    teamBProfileIds: [{ type: Schema.Types.ObjectId, ref: "PlayerProfile", required: true }],
+    scoreA: { type: Number, min: 0, max: 30 },
+    scoreB: { type: Number, min: 0, max: 30 },
     winnerTeam: { type: String, enum: ["A", "B"] },
-    status: { type: String, enum: ["scheduled", "completed"], default: "scheduled" },
+    status: { type: String, enum: MATCH_STATUSES, default: "scheduled", index: true },
+    resultVersion: { type: Number, default: 1, min: 1 },
+    resultUpdatedAt: { type: Date },
+    resultUpdatedByUserId: { type: Schema.Types.ObjectId, ref: "User" },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
-export const MatchModel = model<MatchDocument>("Match", matchSchema);
+matchSchema.index({ sessionId: 1, roundNumber: 1, courtNumber: 1 }, { unique: true });
+
+export const MatchModel = model("Match", matchSchema);
