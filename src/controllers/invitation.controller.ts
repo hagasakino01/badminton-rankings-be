@@ -1,6 +1,7 @@
 import { z } from "zod";
 import mongoose, { type ClientSession, type Types } from "mongoose";
 
+import { selectClientAppUrl } from "../config/clientUrls";
 import { env } from "../config/env";
 import { GroupModel } from "../models/Group";
 import { GroupMemberModel } from "../models/GroupMember";
@@ -117,6 +118,9 @@ export const createInvitation = asyncHandler(async (req, res) => {
     metadata: { groupMemberId: member._id, email, expiresAt: invitation.expiresAt },
   });
 
+  const invitePath = `/invite/${encodeURIComponent(token)}`;
+  const clientAppUrl = selectClientAppUrl(req.get("origin"), env.CLIENT_ORIGIN, env.APP_URL);
+
   res.status(201).json({
     invitation: {
       id: invitation._id,
@@ -125,7 +129,8 @@ export const createInvitation = asyncHandler(async (req, res) => {
       expiresAt: invitation.expiresAt,
       tokenHint: invitation.tokenHint,
     },
-    inviteUrl: `${env.APP_URL}/invite/${encodeURIComponent(token)}`,
+    invitePath,
+    inviteUrl: `${clientAppUrl}${invitePath}`,
     token,
   });
 });

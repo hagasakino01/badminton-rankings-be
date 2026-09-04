@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
-    "test": "tsx --test src/services/score.service.test.ts src/services/schedule.service.test.ts src/services/ranking.service.test.ts src/services/groupLifecycle.service.test.ts src/services/personalStatistics.service.test.ts",
+    "test": "tsx --test src/config/clientUrls.test.ts src/services/score.service.test.ts src/services/schedule.service.test.ts src/services/ranking.service.test.ts src/services/groupLifecycle.service.test.ts src/services/personalStatistics.service.test.ts",
     "db:reset": "tsx src/scripts/resetDatabase.ts",
     "db:seed": "tsx src/scripts/seedDatabase.ts"
   },
